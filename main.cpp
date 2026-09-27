@@ -181,37 +181,65 @@ else if (sortChoice == 2) {
         });
 }
 
-    // Table header
-    std::cout << std::left
-              << std::setw(15) << "Name"
-              << std::setw(15) << "Surname"
-              << std::setw(12) << "Average"
-              << std::setw(12) << "Median"
-              << std::setw(10) << "Exam"
-              << std::setw(15) << "Final Avg"
-              << std::setw(15) << "Final Median"
-              << std::endl;
+int gradeChoice;
 
-    std::cout << std::string(94, '-') << std::endl;
+do {
+    std::cout << "\nCalculate final grade using:\n";
+    std::cout << "1 - Average\n";
+    std::cout << "2 - Median\n";
+    std::cout << "Your choice: ";
 
-    // Student data
-    for (const Student& s : students) {
+    std::cin >> gradeChoice;
 
-        double finalAverage = s.calculateFinalGrade(false);
-        double finalMedian = s.calculateFinalGrade(true);
-
-        std::cout << std::left
-                  << std::setw(15) << s.getName()
-                  << std::setw(15) << s.getSurname()
-                  << std::setw(12) << s.getHomeworkAverage()
-                  << std::setw(12) << s.getHomeworkMedian()
-                  << std::setw(10) << s.getExam()
-                  << std::setw(15) << std::fixed << std::setprecision(2)
-                  << finalAverage
-                  << std::setw(15)
-                  << finalMedian
-                  << std::endl;
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(10000, '\n');
+        std::cout << "Invalid input. Please enter 1 or 2.\n";
+        gradeChoice = 0;
     }
+    else if (gradeChoice < 1 || gradeChoice > 2) {
+        std::cout << "Invalid choice. Please enter 1 or 2.\n";
+    }
+
+} while (gradeChoice < 1 || gradeChoice > 2);
+
+
+// Table header
+std::cout << std::left
+          << std::setw(15) << "Name"
+          << std::setw(15) << "Surname";
+
+if (gradeChoice == 1) {
+    std::cout << std::setw(20) << "Final Point (Avg.)";
+}
+else {
+    std::cout << std::setw(20) << "Final Point (Med.)";
+}
+
+std::cout << std::endl;
+
+std::cout << std::string(50, '-') << std::endl;
+
+
+// Student data
+for (const Student& s : students) {
+
+    double finalGrade;
+
+    if (gradeChoice == 1) {
+        finalGrade = s.calculateFinalGrade(false);
+    }
+    else {
+        finalGrade = s.calculateFinalGrade(true);
+    }
+
+    std::cout << std::left
+              << std::setw(15) << s.getName()
+              << std::setw(15) << s.getSurname()
+              << std::setw(20) << std::fixed << std::setprecision(2)
+              << finalGrade
+              << std::endl;
+}
 
     // Test Rule of Three
 Student original("Test", "Student");
