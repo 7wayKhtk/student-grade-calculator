@@ -1,0 +1,13 @@
+
+# Compiled program
+*.exe
+
+# Generated benchmark datasets
+students*.txt
+
+# Generated output files
+passed_*.txt
+failed_*.txt
+
+# Temporary test data
+test_students.txt
