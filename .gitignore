@@ -1,6 +1,7 @@
 
-# Compiled program
+# Compiled programs
 *.exe
+main.exe
 
 # Generated benchmark datasets
 students*.txt
