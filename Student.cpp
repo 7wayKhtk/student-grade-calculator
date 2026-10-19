@@ -1,27 +1,18 @@
 #include "Student.h"
 #include <algorithm>
 #include <cstdlib>
+#include <stdexcept>
 
-// Default constructor
 Student::Student()
-    : name(""), surname(""), homework(), exam(0), finalGrade(0.0) {
-}
+    : name(""), surname(""), homework(), exam(0), finalGrade(0.0) {}
 
-// Constructor with name and surname
 Student::Student(const std::string& name, const std::string& surname)
-    : name(name), surname(surname), homework(), exam(0), finalGrade(0.0) {
-}
+    : name(name), surname(surname), homework(), exam(0), finalGrade(0.0) {}
 
-// Copy constructor
 Student::Student(const Student& other)
-    : name(other.name),
-      surname(other.surname),
-      homework(other.homework),
-      exam(other.exam),
-      finalGrade(other.finalGrade) {
-}
+    : name(other.name), surname(other.surname), homework(other.homework),
+      exam(other.exam), finalGrade(other.finalGrade) {}
 
-// Copy assignment operator
 Student& Student::operator=(const Student& other) {
     if (this != &other) {
         name = other.name;
@@ -30,140 +21,95 @@ Student& Student::operator=(const Student& other) {
         exam = other.exam;
         finalGrade = other.finalGrade;
     }
-
     return *this;
 }
 
-// Destructor
-Student::~Student() {
-}
+Student::~Student() = default;
 
-// Calculate final grade using homework average or median
 double Student::calculateFinalGrade(bool useMedian) const {
-    if (homework.empty()) {
-        return 0.6 * exam;
-    }
-
-    double homeworkResult;
-
-    if (useMedian) {
-        std::vector<int> sortedHomework = homework;
-
-        std::sort(sortedHomework.begin(), sortedHomework.end());
-
-        size_t n = sortedHomework.size();
-
-        if (n % 2 == 1) {
-            homeworkResult = sortedHomework[n / 2];
-        } else {
-            homeworkResult =
-                (sortedHomework[n / 2 - 1] + sortedHomework[n / 2]) / 2.0;
-        }
-    } else {
-        double sum = 0;
-
-        for (int grade : homework) {
-            sum += grade;
-        }
-
-        homeworkResult = sum / homework.size();
-    }
-
+    const double homeworkResult = useMedian ? getHomeworkMedian() : getHomeworkAverage();
     return 0.4 * homeworkResult + 0.6 * exam;
 }
-// Input operator
+
+// Record format: name surname homeworkCount grade1 ... gradeN exam
 std::istream& operator>>(std::istream& in, Student& student) {
-    in >> student.name >> student.surname;
-
-    int homeworkCount;
-    in >> homeworkCount;
-
-    student.homework.clear();
-
-    for (int i = 0; i < homeworkCount; ++i) {
-        int grade;
-        in >> grade;
-        student.homework.push_back(grade);
+    std::string newName, newSurname;
+    int homeworkCount = 0;
+    if (!(in >> newName >> newSurname >> homeworkCount)) return in;
+    if (homeworkCount < 0 || homeworkCount > 1000) {
+        in.setstate(std::ios::failbit);
+        return in;
     }
 
-    in >> student.exam;
-;
+    std::vector<int> newHomework;
+    newHomework.reserve(static_cast<std::size_t>(homeworkCount));
+    for (int i = 0; i < homeworkCount; ++i) {
+        int grade;
+        if (!(in >> grade) || grade < 1 || grade > 10) {
+            in.setstate(std::ios::failbit);
+            return in;
+        }
+        newHomework.push_back(grade);
+    }
 
+    int newExam;
+    if (!(in >> newExam) || newExam < 1 || newExam > 10) {
+        in.setstate(std::ios::failbit);
+        return in;
+    }
+
+    student.name = newName;
+    student.surname = newSurname;
+    student.homework = newHomework;
+    student.exam = newExam;
+    student.finalGrade = 0.0;
     return in;
 }
 
-// Output operator
 std::ostream& operator<<(std::ostream& out, const Student& student) {
-    out << student.name << " "
-        << student.surname << " "
-        << student.finalGrade;
-
+    out << student.name << ' ' << student.surname << ' ' << student.homework.size();
+    for (int grade : student.homework) out << ' ' << grade;
+    out << ' ' << student.exam;
     return out;
 }
 
-// Getters
-std::string Student::getName() const {
-    return name;
-}
-
-std::string Student::getSurname() const {
-    return surname;
-}
-
-double Student::getFinalGrade() const {
-    return finalGrade;
-}
+std::string Student::getName() const { return name; }
+std::string Student::getSurname() const { return surname; }
+double Student::getFinalGrade() const { return finalGrade; }
+int Student::getExam() const { return exam; }
 
 void Student::generateRandomGrades(int homeworkCount) {
+    if (homeworkCount < 0 || homeworkCount > 1000)
+        throw std::invalid_argument("Homework count must be between 0 and 1000.");
     homework.clear();
-
-    for (int i = 0; i < homeworkCount; ++i) {
-        homework.push_back(1 + std::rand() % 10);
-    }
-
+    for (int i = 0; i < homeworkCount; ++i) homework.push_back(1 + std::rand() % 10);
     exam = 1 + std::rand() % 10;
 }
 
 double Student::getHomeworkAverage() const {
-    if (homework.empty()) {
-        return 0.0;
-    }
-
-    double sum = 0;
-
-    for (int grade : homework) {
-        sum += grade;
-    }
-
+    if (homework.empty()) return 0.0;
+    double sum = 0.0;
+    for (int grade : homework) sum += grade;
     return sum / homework.size();
 }
 
 double Student::getHomeworkMedian() const {
-    if (homework.empty()) {
-        return 0.0;
-    }
-
-    std::vector<int> sortedHomework = homework;
-
-    std::sort(sortedHomework.begin(), sortedHomework.end());
-
-    size_t n = sortedHomework.size();
-
-    if (n % 2 == 1) {
-        return sortedHomework[n / 2];
-    }
-
-    return (sortedHomework[n / 2 - 1] + sortedHomework[n / 2]) / 2.0;
-}
-
-int Student::getExam() const {
-    return exam;
+    if (homework.empty()) return 0.0;
+    std::vector<int> sorted = homework;
+    std::sort(sorted.begin(), sorted.end());
+    const std::size_t n = sorted.size();
+    if (n % 2 == 1) return sorted[n / 2];
+    return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0;
 }
 
 void Student::addHomeworkGrade(int grade) {
+    if (grade < 1 || grade > 10)
+        throw std::invalid_argument("Homework grades must be between 1 and 10.");
     homework.push_back(grade);
 }
 
 void Student::setExam(int grade) {
+    if (grade < 1 || grade > 10)
+        throw std::invalid_argument("Exam grade must be between 1 and 10.");
     exam = grade;
 }

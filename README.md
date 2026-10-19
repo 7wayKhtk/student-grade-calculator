@@ -1,31 +1,23 @@
-# Student Grade Calculator
+# Student Grade Calculator v0.2
 
-## Description
+- Reads student records from a file.
+- Generates benchmark files of 1,000, 10,000, 100,000, 1,000,000 and 10,000,000 students.
+- Sorts by name or surname.
+- Calculates final grade with homework average or median: 0.4 * homework + 0.6 * exam.
+- Writes passed students (final grade >= 5.0) to `passed.txt` and failed students (final grade < 5.0) to `failed.txt`.
+- Measures reading, sorting, classification and writing time.
+- Uses exceptions for file and input-data errors.
 
-This project is a C++ application for managing students and calculating their final grades based on homework assignments and exam results.
+Input record format, one student per line:
+`Name Surname homeworkCount homeworkGrade1 ... homeworkGradeN examGrade`
 
-The application will allow users to enter student information, homework results, and exam results. It will calculate the final grade using both the average and median of homework grades.
+Example:
+`Youssef ElQouqi 5 5 8 9 10 7 9`
 
-## Final Grade Calculation
+Compile in PowerShell with g++:
+```powershell
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Student.cpp -o student_grade_calculator.exe
+.\student_grade_calculator.exe
+```
 
-The final grade is calculated using the following formula:
-
-**Final grade = 0.4 × Homework result + 0.6 × Exam result**
-
-The homework result can be calculated using either:
-
-- Arithmetic average
-- Median
-
-The application will also support reading student data from a file, generating random student results, sorting students, and displaying the results in a formatted table.
-
-## Planned Features
-
-- Student information management
-- Homework and exam grade input
-- Final grade calculation
-- Average and median calculations
-- Random test data generation
-- Reading student data from a file
-- Sorting students by name or surname
-- Formatted output
+Generating the 10-million-student file requires substantial disk space and time.
