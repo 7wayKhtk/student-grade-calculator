@@ -25,6 +25,7 @@ int readInt(const std::string& prompt, int minValue, int maxValue) {
         std::cout << prompt;
         if (std::cin >> value && value >= minValue && value <= maxValue) return value;
         std::cout << "Invalid input. Enter a number from " << minValue << " to " << maxValue << ".\n";
+        if (std::cin.eof()) throw std::runtime_error("Input ended.");
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
@@ -216,28 +217,30 @@ void benchmarkContainer(
 
     const auto sortEnd = Clock::now();
 
+    std::cout << "Strategy 1: two new groups; original retained\n";
     const auto classifyStart = Clock::now();
-    std::size_t passedCount = 0;
-    std::size_t failedCount = 0;
-
+    // Strategy 1: keep the source and create two containers of the same type.
+    Container passedStudents;
+    Container failedStudents;
     for (const Student& student : students) {
-        if (student.calculateFinalGrade(useMedian) >= 5.0) {
-            ++passedCount;
-        } else {
-            ++failedCount;
-        }
+        if (student.calculateFinalGrade(useMedian) >= 5.0)
+            passedStudents.push_back(student);
+        else
+            failedStudents.push_back(student);
     }
+    const auto passedCount = passedStudents.size();
+    const auto failedCount = failedStudents.size();
 
     const auto classifyEnd = Clock::now();
 
     const auto writeStart = Clock::now();
     writeGroupGeneric(
         "passed_" + containerName + ".txt",
-        students, true, useMedian
+        passedStudents, true, useMedian
     );
     writeGroupGeneric(
         "failed_" + containerName + ".txt",
-        students, false, useMedian
+        failedStudents, false, useMedian
     );
     const auto writeEnd = Clock::now();
 
@@ -266,10 +269,10 @@ int main() {
             std::chrono::system_clock::now().time_since_epoch().count()));
 
         
-std::cout << "Student Grade Calculator v0.25\n"
+std::cout << "Student Grade Calculator - Task 3 stage 1\n"
           << "1 - Process a student file (original vector mode)\n"
           << "2 - Generate benchmark files\n"
-          << "3 - Compare vector, list, and deque\n";
+          << "3 - Strategy 1: compare vector, list, and deque\n";
 
 const int action = readInt("Your choice: ", 1, 3);
 
