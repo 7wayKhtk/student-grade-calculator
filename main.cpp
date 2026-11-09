@@ -194,7 +194,7 @@ void benchmarkContainer(
     const std::string& containerName,
     int sortChoice,
     bool useMedian,
-    int strategy
+    int strategy, int run, std::ostream& results
 ) {
     std::cout << "\n--- " << containerName
               << " | " << filename << " ---\n";
@@ -264,6 +264,15 @@ void benchmarkContainer(
     const double classifyTime = elapsedMs(classifyStart, classifyEnd);
     const double writeTime = elapsedMs(writeStart, writeEnd);
 
+    results << std::quoted(filename) << ',' << containerName << ',' << strategy
+            << ',' << run << ',' << sortChoice << ',' << (useMedian ? "median" : "average")
+            << ',' << originalCount << ',' << passedCount << ',' << failedCount
+            << ',' << std::setprecision(9) << readTime << ',' << sortTime
+            << ',' << classifyTime << ',' << writeTime
+            << ',' << (readTime + sortTime + classifyTime + writeTime)
+            << ',' << students.size() + passedStudents.size() + failedStudents.size() << '\n';
+    if (!results) throw std::runtime_error("Could not write benchmark_results.csv");
+
     std::cout << "Students: " << originalCount
               << "\nPassed: " << passedCount
               << "\nFailed: " << failedCount
@@ -299,7 +308,7 @@ if (action == 2) {
 if (action == 3) {
     std::string filename;
     std::cout << "Input benchmark filename: ";
-    std::cin >> filename;
+    if (!std::getline(std::cin >> std::ws, filename)) throw std::runtime_error("Input ended.");
 
     const int sortChoice =
         readInt("Sort by: 1 - Name, 2 - Surname: ", 1, 2);
@@ -309,19 +318,29 @@ if (action == 3) {
 
     const bool useMedian = (gradeChoice == 2);
 
-    const int strategy = readInt("Strategy: 1 - Two new groups, 2 - Failed group only: ", 1, 2);
-
-    benchmarkContainer<std::vector<Student>>(
-        filename, "vector", sortChoice, useMedian, strategy
-    );
-
-    benchmarkContainer<std::list<Student>>(
-        filename, "list", sortChoice, useMedian, strategy
-    );
-
-    benchmarkContainer<std::deque<Student>>(
-        filename, "deque", sortChoice, useMedian, strategy
-    );
+    const int selection = readInt("Strategy: 1 - Two groups, 2 - Failed only, 3 - Both: ", 1, 3);
+    const int repetitions = readInt("Repetitions (1-20): ", 1, 20);
+    std::ofstream results("benchmark_results.csv");
+    if (!results) throw std::runtime_error("Cannot create benchmark_results.csv");
+    results << "file,container,strategy,run,sort,grade_method,students,passed,failed,read_ms,sort_ms,split_ms,write_ms,total_ms,retained_records\n";
+    for (int run = 1; run <= repetitions; ++run) {
+        for (int strategy = 1; strategy <= 2; ++strategy) {
+            if (selection != 3 && selection != strategy) continue;
+            // Rotate container order to reduce a fixed-order advantage.
+            for (int offset = 0; offset < 3; ++offset) {
+                const int container = (run - 1 + offset) % 3;
+                if (container == 0)
+                    benchmarkContainer<std::vector<Student>>(filename, "vector", sortChoice, useMedian, strategy, run, results);
+                else if (container == 1)
+                    benchmarkContainer<std::list<Student>>(filename, "list", sortChoice, useMedian, strategy, run, results);
+                else
+                    benchmarkContainer<std::deque<Student>>(filename, "deque", sortChoice, useMedian, strategy, run, results);
+            }
+        }
+    }
+    results.close();
+    if (!results) throw std::runtime_error("Could not finish benchmark_results.csv");
+    std::cout << "Saved benchmark_results.csv (replaces previous results).\n";
 
     return 0;
 }
@@ -329,7 +348,7 @@ if (action == 3) {
 
         std::string filename;
         std::cout << "Input filename (e.g. students10000.txt): ";
-        std::cin >> filename;
+        if (!std::getline(std::cin >> std::ws, filename)) throw std::runtime_error("Input ended.");
         const int sortChoice = readInt("Sort by: 1 - Name, 2 - Surname: ", 1, 2);
         const int gradeChoice = readInt("Final grade: 1 - Average, 2 - Median: ", 1, 2);
         const bool useMedian = (gradeChoice == 2);

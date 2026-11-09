@@ -1,14 +1,7 @@
-
-# Compiled programs
-*.exe
-main.exe
-
-# Generated benchmark datasets
-students*.txt
-
-# Generated output files
-passed_*.txt
-failed_*.txt
-
-# Temporary test data
-test_students.txt
+/build/
+/student_grade_calculator
+/*.exe
+/students[0-9]*.txt
+/passed*.txt
+/failed*.txt
+/benchmark_results.csv
