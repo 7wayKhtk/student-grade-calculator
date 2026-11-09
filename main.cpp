@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <type_traits>
+#include <sstream>
 
 using Clock = std::chrono::steady_clock;
 
@@ -72,25 +73,21 @@ std::vector<Student> readStudents(const std::string& filename) {
 template <typename Container>
 Container readStudentsInto(const std::string& filename) {
     std::ifstream in(filename);
-
-    if (!in) {
-        throw std::runtime_error("Could not open input file: " + filename);
-    }
-
+    if (!in) throw std::runtime_error("Could not open input file: " + filename);
     Container students;
-    Student student;
-
-    while (in >> student) {
+    std::string line;
+    std::size_t lineNumber = 0;
+    while (std::getline(in, line)) {
+        ++lineNumber;
+        if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
+        std::istringstream record(line);
+        Student student;
+        std::string extra;
+        if (!(record >> student) || (record >> extra))
+            throw std::runtime_error("Invalid record on line " + std::to_string(lineNumber));
         students.push_back(student);
     }
-
-    if (!in.eof()) {
-        throw std::runtime_error(
-            "Invalid student data in " + filename +
-            ". Check the record format and grades."
-        );
-    }
-
+    if (in.bad()) throw std::runtime_error("Error reading " + filename);
     return students;
 }
 
@@ -196,7 +193,8 @@ void benchmarkContainer(
     const std::string& filename,
     const std::string& containerName,
     int sortChoice,
-    bool useMedian
+    bool useMedian,
+    int strategy
 ) {
     std::cout << "\n--- " << containerName
               << " | " << filename << " ---\n";
@@ -204,6 +202,7 @@ void benchmarkContainer(
     const auto readStart = Clock::now();
     Container students = readStudentsInto<Container>(filename);
     const auto readEnd = Clock::now();
+    const auto originalCount = students.size();
 
     const auto sortStart = Clock::now();
 
@@ -217,29 +216,45 @@ void benchmarkContainer(
 
     const auto sortEnd = Clock::now();
 
-    std::cout << "Strategy 1: two new groups; original retained\n";
+    std::cout << "Strategy " << strategy << '\n';
     const auto classifyStart = Clock::now();
-    // Strategy 1: keep the source and create two containers of the same type.
     Container passedStudents;
     Container failedStudents;
-    for (const Student& student : students) {
-        if (student.calculateFinalGrade(useMedian) >= 5.0)
-            passedStudents.push_back(student);
-        else
-            failedStudents.push_back(student);
+    if (strategy == 1) {
+        for (const Student& student : students) {
+            if (student.calculateFinalGrade(useMedian) >= 5.0)
+                passedStudents.push_back(student);
+            else
+                failedStudents.push_back(student);
+        }
+    } else {
+        // Compact passed records in place, then erase the unused tail once.
+        // This avoids repeatedly shifting vector/deque elements.
+        auto destination = students.begin();
+        for (auto current = students.begin(); current != students.end(); ++current) {
+            if (current->calculateFinalGrade(useMedian) < 5.0) {
+                failedStudents.push_back(*current);
+            } else {
+                if (destination != current) *destination = *current;
+                ++destination;
+            }
+        }
+        students.erase(destination, students.end());
+        // Logical size is reduced for every container. Capacity is not a byte measurement.
     }
-    const auto passedCount = passedStudents.size();
+    const Container& passedGroup = strategy == 1 ? passedStudents : students;
+    const auto passedCount = passedGroup.size();
     const auto failedCount = failedStudents.size();
 
     const auto classifyEnd = Clock::now();
 
     const auto writeStart = Clock::now();
     writeGroupGeneric(
-        "passed_" + containerName + ".txt",
-        passedStudents, true, useMedian
+        "passed_" + containerName + "_s" + std::to_string(strategy) + ".txt",
+        passedGroup, true, useMedian
     );
     writeGroupGeneric(
-        "failed_" + containerName + ".txt",
+        "failed_" + containerName + "_s" + std::to_string(strategy) + ".txt",
         failedStudents, false, useMedian
     );
     const auto writeEnd = Clock::now();
@@ -249,7 +264,7 @@ void benchmarkContainer(
     const double classifyTime = elapsedMs(classifyStart, classifyEnd);
     const double writeTime = elapsedMs(writeStart, writeEnd);
 
-    std::cout << "Students: " << students.size()
+    std::cout << "Students: " << originalCount
               << "\nPassed: " << passedCount
               << "\nFailed: " << failedCount
               << std::fixed << std::setprecision(2)
@@ -269,10 +284,10 @@ int main() {
             std::chrono::system_clock::now().time_since_epoch().count()));
 
         
-std::cout << "Student Grade Calculator - Task 3 stage 1\n"
+std::cout << "Student Grade Calculator - Task 3 stage 2\n"
           << "1 - Process a student file (original vector mode)\n"
           << "2 - Generate benchmark files\n"
-          << "3 - Strategy 1: compare vector, list, and deque\n";
+          << "3 - Compare grouping strategies and containers\n";
 
 const int action = readInt("Your choice: ", 1, 3);
 
@@ -294,16 +309,18 @@ if (action == 3) {
 
     const bool useMedian = (gradeChoice == 2);
 
+    const int strategy = readInt("Strategy: 1 - Two new groups, 2 - Failed group only: ", 1, 2);
+
     benchmarkContainer<std::vector<Student>>(
-        filename, "vector", sortChoice, useMedian
+        filename, "vector", sortChoice, useMedian, strategy
     );
 
     benchmarkContainer<std::list<Student>>(
-        filename, "list", sortChoice, useMedian
+        filename, "list", sortChoice, useMedian, strategy
     );
 
     benchmarkContainer<std::deque<Student>>(
-        filename, "deque", sortChoice, useMedian
+        filename, "deque", sortChoice, useMedian, strategy
     );
 
     return 0;
