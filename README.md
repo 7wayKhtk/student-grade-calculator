@@ -1,3 +1,38 @@
+# Task 3 — stage 2 (approximately 75% milestone)
+
+This is an unfinished progress version based on v0.25, not a v1.0 release.
+
+## Build and use
+
+Unix: `make`, then `./student_grade_calculator`.
+
+Windows / VS Code terminal:
+```powershell
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Student.cpp -o student_grade_calculator.exe
+.\student_grade_calculator.exe
+```
+
+CMake alternative: `cmake -S . -B build`, then `cmake --build build --config Release`.
+Make/GCC compilation was verified for this stage. CMake was unavailable in the development environment, so that build path was not rerun.
+
+Option 3 asks for an input filename, sorting choice, average/median, strategy (1, 2 or both), and 1–20 repetitions. It runs vector/list/deque on fresh reads of the same file, rotating container order. Strategy 2 compacts passed students in the original container and erases its tail once. Failed students are copied into the only populated new container. This preserves output order and avoids repeated middle erasures.
+
+Files are `passed_vector_s1.txt`, `failed_vector_s1.txt`, and equivalents for list/deque and s2. Repeats overwrite these group files. `benchmark_results.csv` is replaced on each comparison session; rename it before comparing another dataset if you want to retain it. It records run settings, counts, timings and retained-record counts. CSV output itself is outside the measured phases. Total means reading + sorting + splitting + group-file writing; teardown and menu time are excluded.
+
+Input example: `Alice Smith 3 5 8 9 7` (three homework grades, then exam). Blank lines are skipped; malformed, truncated and extra-field records are rejected in comparison mode.
+
+## Progress and validation
+
+- Stage 1: Strategy 1, build files and guide.
+- Stage 2: Strategy 2 and selection; repeated comparisons and CSV; preliminary results and documentation, in three separate commits.
+- Checks passed: empty, all-pass, all-fail and mixed inputs; grade 5 boundary; average and median; identical group files for both strategies/all containers; malformed records; repetitions.
+- See [STAGE2_RESULTS.md](STAGE2_RESULTS.md) for measured 1K/10K/100K results. These Linux results must not be mixed with the historical Windows results below.
+- Still pending: 1M/10M strategy comparisons, actual memory investigation, final fastest-combination selection, standard-algorithm refactor and before/after results, final v1.0 merge/release and Moodle submission.
+
+## Historical v0.25 documentation
+
+The following is retained from v0.25. Its classification timings counted students without building separate containers, and its old output names describe that release.
+
 # Student Grade Calculator v0.25
 
 ## Overview
