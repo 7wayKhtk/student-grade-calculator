@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         if (argc != 1) throw runtime_error("Usage: --generate COUNT FILE or --run FILE CONTAINER STRATEGY SORT GRADE baseline RUN CSV");
-        cout << "Student Grade Calculator v1.0\n1 - Process a file\n2 - Generate benchmark files\n3 - Compare containers and strategies\n";
+        cout << "Student Grade Calculator - Task 3 stage 3\n1 - Process a file\n2 - Generate benchmark files\n3 - Compare containers and strategies\n";
         const int action = readInt("Choice: ", 1, 3);
         if (action == 2) {
             for (size_t n : {1000, 10000, 100000, 1000000, 10000000}) {

@@ -5,3 +5,4 @@
 /passed*.txt
 /failed*.txt
 /benchmark_results.csv
+/build-*/

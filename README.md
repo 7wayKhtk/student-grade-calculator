@@ -1,173 +1,129 @@
-# Task 3 — stage 2 (approximately 75% milestone)
+# Student Grade Calculator — Task 3 stage 3
 
-This is an unfinished progress version based on v0.25, not a v1.0 release.
+Approximate 88% planning milestone, based on the existing 75% checkpoint. This is a progress version, not the final v1.0 release.
 
-## Build and use
+## Progress
+
+- v0.1: initial calculator (original tag preserved).
+- v0.2: file-processing/benchmark groundwork (original tag preserved).
+- v0.25: container comparisons.
+- Stage 1: Strategy 1 and build files.
+- Stage 2: Strategy 2, repeated comparisons and CSV.
+- Stage 3: isolated benchmark commands, real Linux memory measurements, reproducible full-size datasets and the complete six-way baseline survey through 10M students.
+
+Final algorithm optimization, before/after comparisons and release/submission remain for the next stage. STAGE2_RESULTS.md remains historical; this stage uses the unified CSV format described below.
+
+## Build and run
 
 Unix: `make`, then `./student_grade_calculator`.
 
-Windows / VS Code terminal:
+Windows / VS Code, from the existing task3-repository folder:
+
 ```powershell
 g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Student.cpp -o student_grade_calculator.exe
 .\student_grade_calculator.exe
 ```
 
-CMake alternative: `cmake -S . -B build`, then `cmake --build build --config Release`.
-Make/GCC compilation was verified for this stage. CMake was unavailable in the development environment, so that build path was not rerun.
+CMake alternative:
 
-Option 3 asks for an input filename, sorting choice, average/median, strategy (1, 2 or both), and 1–20 repetitions. It runs vector/list/deque on fresh reads of the same file, rotating container order. Strategy 2 compacts passed students in the original container and erases its tail once. Failed students are copied into the only populated new container. This preserves output order and avoids repeated middle erasures.
-
-Files are `passed_vector_s1.txt`, `failed_vector_s1.txt`, and equivalents for list/deque and s2. Repeats overwrite these group files. `benchmark_results.csv` is replaced on each comparison session; rename it before comparing another dataset if you want to retain it. It records run settings, counts, timings and retained-record counts. CSV output itself is outside the measured phases. Total means reading + sorting + splitting + group-file writing; teardown and menu time are excluded.
-
-Input example: `Alice Smith 3 5 8 9 7` (three homework grades, then exam). Blank lines are skipped; malformed, truncated and extra-field records are rejected in comparison mode.
-
-## Progress and validation
-
-- Stage 1: Strategy 1, build files and guide.
-- Stage 2: Strategy 2 and selection; repeated comparisons and CSV; preliminary results and documentation, in three separate commits.
-- Checks passed: empty, all-pass, all-fail and mixed inputs; grade 5 boundary; average and median; identical group files for both strategies/all containers; malformed records; repetitions.
-- See [STAGE2_RESULTS.md](STAGE2_RESULTS.md) for measured 1K/10K/100K results. These Linux results must not be mixed with the historical Windows results below.
-- Still pending: 1M/10M strategy comparisons, actual memory investigation, final fastest-combination selection, standard-algorithm refactor and before/after results, final v1.0 merge/release and Moodle submission.
-
-## Historical v0.25 documentation
-
-The following is retained from v0.25. Its classification timings counted students without building separate containers, and its old output names describe that release.
-
-# Student Grade Calculator v0.25
-
-## Overview
-
-This release extends v0.2 by comparing the performance of three C++ containers:
-
-- `std::vector`
-- `std::list`
-- `std::deque`
-
-The program reads student records, sorts them by name or surname, calculates final grades, classifies students as passed or failed, writes the results to separate files, and measures execution time.
-
-## Features
-
-- Student class implemented in separate `Student.h` and `Student.cpp` files.
-- Exception handling for file and invalid student-data errors.
-- Generation of benchmark datasets containing 10,000, 100,000, 1,000,000, and 10,000,000 student records.
-- Additional 1,000-student dataset for benchmarking.
-- Sorting by name or surname.
-- Final grade calculated using homework average or median:
-
-  `Final grade = 0.4 × homework result + 0.6 × exam grade`
-
-- Students with a final grade greater than or equal to 5.0 are classified as passed.
-- Students with a final grade below 5.0 are classified as failed.
-- Separate output files for passed and failed students.
-- Execution-time measurements for reading, sorting, classification, and writing.
-- Performance comparison of `std::vector`, `std::list`, and `std::deque`.
-
-## Compilation and execution
-
-Compile with GCC:
-
-```powershell
-g++ -std=c++17 -Wall -Wextra -O2 main.cpp Student.cpp -o StudentGradeCalculator.exe
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
 ```
 
-Run the program:
+Executable: build/student_grade_calculator on Unix; build/student_grade_calculator.exe for MinGW or build/Release/student_grade_calculator.exe for Visual Studio generators. Requires CMake and a configured C++17 compiler.
 
-```powershell
-.\StudentGradeCalculator.exe
+## Menu
+
+1. Process an input file with vector.
+2. Generate 1K, 10K, 100K, 1M and 10M student files (substantial disk space).
+3. Compare vector, list and deque.
+
+Processing asks for filename, sort by name/surname, average/median and strategy 1/2/both. Comparison also asks for 1–20 repetitions. This stage runs original loops only; algorithm selection is intentionally reserved for the final stage.
+
+Strategy 1 retains the source and creates two same-type groups. Strategy 2 copies failures to a new container, compacts passed records in the source and erases the unused tail once. Erase updates the container size; it need not shrink vector/deque capacity.
+
+Example input (one record per line):
+
+```text
+Youssef ElQouqi 5 5 8 9 10 7 9
 ```
 
-Choose option 3 to compare the containers. Use the same dataset, sorting option, and grade calculation method for each comparison.
+Fields: name, surname, homework count, homework grades, exam. Names are single tokens; count 0–1000; grades 1–10. Final grade = 0.4 × homework average/median + 0.6 × exam. Grade >= 5 passes. Zero homework contributes zero. Blank lines are skipped; malformed/truncated/extra fields are rejected. A small students.txt is included.
 
-## Benchmark environment
+Outputs include passed_list_s2_baseline.txt and failed_list_s2_baseline.txt (corresponding names for other containers/strategies). Reports include final grades and are not input files. Repeated runs overwrite matching report files. The interactive CSV is benchmark_results.csv and is replaced each session; rename it if you want to retain it.
 
-- Operating system: Windows
-- Compiler: GCC / MinGW
-- C++ standard: C++17
-- Optimization: `-O2`
-- Sorting: By name
-- Final grade calculation: Homework average
+## Isolated benchmarking and verification
 
-All execution times are in milliseconds. These measurements are specific to the machine and environment used for testing.
+Python 3 is optional for the calculator and required for these helper scripts. Windows commands:
 
-## Benchmark results: 1,000 students
+```powershell
+python scripts/check.py .\student_grade_calculator.exe
+python scripts/benchmark.py --exe .\student_grade_calculator.exe --output results/my-baseline.csv --sizes 1000 10000 --repetitions 3
+```
 
-| Container | Reading | Sorting | Classification | Writing | Total |
-|---|---:|---:|---:|---:|---:|
-| `std::vector` | 3.16 | 1.19 | 0.02 | 6.00 | 10.38 |
-| `std::list` | 2.55 | 0.32 | 0.03 | 7.31 | 10.22 |
-| `std::deque` | 1.71 | 1.57 | 0.03 | 7.02 | 10.33 |
+Omit --sizes to measure all five required sizes; use --repetitions 1 to reproduce the survey. The runner creates temporary datasets and deletes them after use. Run from a location with sufficient space. It rotates case order across repetitions and launches a new process for each measurement.
 
-## Benchmark results: 10,000 students
+Single-case commands:
 
-| Container | Reading | Sorting | Classification | Writing | Total |
-|---|---:|---:|---:|---:|---:|
-| `std::vector` | 165.81 | 13.90 | 0.18 | 20.64 | 200.53 |
-| `std::list` | 19.71 | 4.91 | 1.79 | 23.12 | 49.53 |
-| `std::deque` | 18.73 | 18.66 | 0.26 | 22.17 | 59.82 |
+```powershell
+.\student_grade_calculator.exe --generate 1000 students1000.txt
+.\student_grade_calculator.exe --run students1000.txt list 2 1 1 baseline 1 one.csv
+```
 
-## Benchmark results: 100,000 students
+--run arguments: input, container, strategy, sort, grade, baseline, run number, CSV. Run where its output filenames can safely be replaced.
 
-| Container | Reading | Sorting | Classification | Writing | Total |
-|---|---:|---:|---:|---:|---:|
-| `std::vector` | 169.89 | 160.70 | 2.02 | 223.22 | 555.83 |
-| `std::list` | 159.41 | 42.68 | 3.15 | 231.27 | 436.52 |
-| `std::deque` | 142.89 | 179.32 | 2.51 | 186.20 | 510.92 |
+Read/sort/split/write timings are separate; total is their sum. Menu time, CSV logging, memory probes, input generation and container destruction are excluded. Files are closed and write errors checked, but physical disk synchronization is not forced.
 
-## Benchmark results: 1,000,000 students
+Linux RSS comes from /proc/self/status and peak RSS from getrusage, in KiB. On Windows/unsupported systems these columns contain -1, meaning unavailable. Interactive peak RSS is cumulative; use fresh-process measurements for comparisons. These Linux readings do not describe your Windows computer.
 
-| Container | Reading | Sorting | Classification | Writing | Total |
-|---|---:|---:|---:|---:|---:|
-| `std::vector` | 1499.66 | 2117.96 | 21.40 | 1832.16 | 5471.19 |
-| `std::list` | 1522.77 | 561.91 | 35.37 | 1753.24 | 3873.31 |
-| `std::deque` | 1425.28 | 2603.85 | 27.23 | 1713.05 | 5769.40 |
+The tests cover 96 valid combinations: empty/all-pass/all-fail/mixed records, grade-5 boundary, zero homework, average/median, both sorting choices, both strategies and all containers. Invalid/missing inputs and EOF are also checked.
 
-## Benchmark results: 10,000,000 students
+## Recorded results
 
-| Container | Reading | Sorting | Classification | Writing | Total |
-|---|---:|---:|---:|---:|---:|
-| `std::vector` | 25159.69 | 29779.56 | 208.85 | 20297.72 | 75445.83 |
-| `std::list` | 15805.20 | 6756.44 | 341.32 | 24474.14 | 47377.11 |
-| `std::deque` | 15122.58 | 30053.60 | 264.46 | 23060.03 | 68500.67 |
+### Stage 3 baseline measurements
 
-## Classification verification
+Recorded on 9 November 2026 during the previous final-stage investigation and reused here because this checkpoint uses that same baseline implementation. These are measured results, not estimates, and were not rerun for this packaging step.
 
-All three containers produced the same passed and failed counts for each dataset.
+Linux x86_64, GCC 14.2.0, C++17, -O2; see results/baseline.json. Deterministic five-homework records; sort by name; use average. One fresh process per case; caches not cleared. The single-run survey identifies a candidate to investigate, not a universal winner.
 
-| Students | Passed | Failed |
-|---:|---:|---:|
-| 1,000 | 557 | 443 |
-| 10,000 | 5,799 | 4,201 |
-| 100,000 | 58,686 | 41,314 |
-| 1,000,000 | 585,900 | 414,100 |
-| 10,000,000 | 5,864,969 | 4,135,031 |
+| Students | Container | Strategy | Read ms | Sort ms | Split ms | Write ms | Total ms | RSS after split MiB |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 1000 | vector | 1 | 0.408 | 0.438 | 0.094 | 0.347 | 1.287 | 2.20 |
+| 1000 | vector | 2 | 0.405 | 0.401 | 0.066 | 0.331 | 1.203 | 2.14 |
+| 1000 | list | 1 | 0.422 | 0.129 | 0.050 | 0.265 | 0.866 | 2.12 |
+| 1000 | list | 2 | 0.354 | 0.129 | 0.043 | 0.253 | 0.779 | 2.05 |
+| 1000 | deque | 1 | 0.302 | 0.525 | 0.048 | 0.256 | 1.130 | 2.09 |
+| 1000 | deque | 2 | 0.317 | 0.390 | 0.039 | 0.513 | 1.259 | 2.04 |
+| 10000 | vector | 1 | 4.128 | 6.163 | 0.897 | 2.351 | 13.540 | 5.28 |
+| 10000 | vector | 2 | 4.163 | 5.877 | 0.916 | 3.356 | 14.312 | 4.63 |
+| 10000 | list | 1 | 10.756 | 2.723 | 1.623 | 5.978 | 21.080 | 4.87 |
+| 10000 | list | 2 | 3.132 | 2.071 | 0.463 | 2.489 | 8.155 | 4.25 |
+| 10000 | deque | 1 | 3.140 | 6.841 | 0.536 | 2.762 | 13.278 | 4.54 |
+| 10000 | deque | 2 | 2.967 | 6.596 | 0.400 | 2.627 | 12.591 | 3.99 |
+| 100000 | vector | 1 | 35.033 | 79.044 | 10.743 | 25.459 | 150.280 | 34.59 |
+| 100000 | vector | 2 | 35.491 | 78.065 | 6.216 | 25.077 | 144.849 | 27.39 |
+| 100000 | list | 1 | 32.408 | 23.189 | 8.251 | 30.250 | 94.098 | 32.33 |
+| 100000 | list | 2 | 31.461 | 22.724 | 4.743 | 24.010 | 82.939 | 26.22 |
+| 100000 | deque | 1 | 33.111 | 92.860 | 4.752 | 29.587 | 160.310 | 28.93 |
+| 100000 | deque | 2 | 30.540 | 81.599 | 4.293 | 25.317 | 141.748 | 23.50 |
+| 1000000 | vector | 1 | 368.914 | 1131.734 | 159.268 | 240.219 | 1900.135 | 273.38 |
+| 1000000 | vector | 2 | 335.729 | 1089.213 | 80.443 | 232.284 | 1737.669 | 243.71 |
+| 1000000 | list | 1 | 298.801 | 255.211 | 66.784 | 260.252 | 881.048 | 306.99 |
+| 1000000 | list | 2 | 342.908 | 267.733 | 53.783 | 256.027 | 920.451 | 245.95 |
+| 1000000 | deque | 1 | 294.750 | 1033.606 | 58.708 | 325.958 | 1713.022 | 272.69 |
+| 1000000 | deque | 2 | 306.171 | 1109.358 | 50.206 | 252.714 | 1718.448 | 218.52 |
+| 10000000 | vector | 1 | 11564.660 | 13653.767 | 2196.356 | 2684.767 | 30099.550 | 2631.98 |
+| 10000000 | vector | 2 | 3832.982 | 13304.537 | 811.536 | 2463.554 | 20412.609 | 2149.92 |
+| 10000000 | list | 1 | 3052.914 | 3147.348 | 771.396 | 2564.739 | 9536.397 | 3053.57 |
+| 10000000 | list | 2 | 3134.905 | 3092.422 | 554.860 | 2352.544 | 9134.731 | 2443.21 |
+| 10000000 | deque | 1 | 3017.461 | 13896.854 | 522.515 | 2972.296 | 20409.127 | 2710.29 |
+| 10000000 | deque | 2 | 3013.849 | 13793.138 | 532.129 | 3084.985 | 20424.102 | 2168.59 |
 
-The passed and failed counts add up to the total number of students in every dataset.
+At 10M records, list/strategy 2 had the lowest surveyed total (9.135 seconds). It is the candidate for the next stage, when standard algorithms and repeated before/after measurements will be added.
 
-## Performance analysis
+RSS after splitting is resident process memory, not a sum of Student object sizes. Strategy 1 retains 2N live records; Strategy 2 retains N. Vector/deque capacity, list nodes, allocator retention and dynamic strings/homework affect allocated bytes. Erase reduces logical size without guaranteeing capacity release.
 
-The results show that container performance depends on dataset size and the operation being measured.
+For 10M records, strategy 1 / strategy 2 resident memory was approximately vector 2632 / 2150 MiB, list 3054 / 2443 MiB, deque 2710 / 2169 MiB. This supports a memory benefit, not an exact twofold saving. Linux process peak RSS is also in the raw CSV; interactive runs accumulate peaks, so the isolated CLI was used. The OS counters may differ slightly due to sampling/accounting.
 
-- `std::vector` provides contiguous storage and supports random-access sorting with `std::sort`.
-- `std::list` uses its own member `sort()` function, which can perform well for large datasets when sorting is a significant part of the workload.
-- `std::deque` supports random-access iterators and can use `std::sort`, but its measured sorting time was higher than the list implementation in the larger tests.
-- Reading and writing times also contribute substantially to total execution time.
-
-In these measurements, `std::list` had the lowest total time for the 10,000, 100,000, 1,000,000, and 10,000,000 student tests. The 1,000-student test showed very similar total times for all three containers.
-
-These conclusions apply to the measured environment and should not be treated as universal performance rankings.
-
-## Output files
-
-The program writes passed and failed students into separate output files for each container, using the container name in the filename.
-
-- `passed_vector.txt` and `failed_vector.txt`
-- `passed_list.txt` and `failed_list.txt`
-- `passed_deque.txt` and `failed_deque.txt`
-
-## Exception handling
-
-The program reports errors when an input file cannot be opened, student records contain invalid data, or output files cannot be created or written.
-
-## Conclusion
-
-Version v0.25 extends the Student Grade Calculator with implementations using `std::vector`, `std::list`, and `std::deque`. The benchmark results demonstrate that container choice can affect reading, sorting, classification, writing, and total execution time. The most suitable container depends on the dataset and the workload.
+Still pending: standard-algorithm refactor, repeated before/after results, final v1.0 branch/tag/release and Moodle submission.

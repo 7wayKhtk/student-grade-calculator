@@ -1,0 +1,20 @@
+{
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "processor": "",
+  "sizes": [
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000
+  ],
+  "repetitions": 1,
+  "implementation": "baseline",
+  "sort": "name",
+  "grade": "average",
+  "dataset": "i=1..N, six grades (i+j)%10+1, j=0..5",
+  "cache": "not cleared",
+  "process": "fresh process for every case",
+  "compiler": "g++ -std=c++17 -O2 -Wall -Wextra -pedantic",
+  "date": "2026-11-09"
+}

@@ -1,9 +1,19 @@
-# Task 3 stage 2
+# Stage 3 — approximately 88%
 
-Use README.md for the current build and menu instructions and STAGE2_RESULTS.md for preliminary results. This supersedes the stage 1 guide.
+This complete source package includes your previous work plus this checkpoint. Do not paste its main.cpp below existing code. Import the numbered patches in commits/ into your existing task3-repository, on a clean task3-progress branch. There are three new commits.
 
-Your existing repository is C:\Users\sarae\OneDrive\Desktop\task3-repository. Continue on task3-progress.
+Extract the ZIP separately as C:\Users\sarae\OneDrive\Desktop\task3-stage3, then run:
 
-The delivery ZIP includes three numbered patches in commits/. Import them with git am while on a clean task3-progress branch. They preserve separate commits and build on the two stage 1 commits already on GitHub. Do not copy the entire ZIP into the repository or run git init.
+```powershell
+cd C:\Users\sarae\OneDrive\Desktop\task3-repository
+git status
+```
 
-The teacher ZIP was a CMake/file-reading example; the MSI was a Windows CMake installer. No installer is required if your existing compiler is already working and you use the g++ command.
+When clean and on task3-progress:
+
+```powershell
+git am (Get-ChildItem "C:\Users\sarae\OneDrive\Desktop\task3-stage3\commits\*.patch" | Sort-Object Name | Select-Object -ExpandProperty FullName)
+git log -3 --oneline
+```
+
+Stop if any command fails. After checking the imported commits, publish progress with git push origin task3-progress. The final v1.0 release and Moodle submission remain for the next stage. See README.md for compilation and usage.
