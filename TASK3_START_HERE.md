@@ -1,19 +1,3 @@
-# Stage 3 — approximately 88%
+# Final Task 3 update
 
-This complete source package includes your previous work plus this checkpoint. Do not paste its main.cpp below existing code. Import the numbered patches in commits/ into your existing task3-repository, on a clean task3-progress branch. There are three new commits.
-
-Extract the ZIP separately as C:\Users\sarae\OneDrive\Desktop\task3-stage3, then run:
-
-```powershell
-cd C:\Users\sarae\OneDrive\Desktop\task3-repository
-git status
-```
-
-When clean and on task3-progress:
-
-```powershell
-git am (Get-ChildItem "C:\Users\sarae\OneDrive\Desktop\task3-stage3\commits\*.patch" | Sort-Object Name | Select-Object -ExpandProperty FullName)
-git log -3 --oneline
-```
-
-Stop if any command fails. After checking the imported commits, publish progress with git push origin task3-progress. The final v1.0 release and Moodle submission remain for the next stage. See README.md for compilation and usage.
+The full code includes all earlier stages plus the final algorithm optimization. Apply the three numbered patches as described in FINISH_IN_VSCODE.md. README.md contains usage, release history and results; RESULTS.md contains the measurement analysis. The separate Task3_Submission.zip contains the source project without patch files. Publishing v1.0 and submitting its URL to Moodle are still external steps.

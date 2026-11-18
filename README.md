@@ -1,129 +1,187 @@
-# Student Grade Calculator — Task 3 stage 3
+# Student Grade Calculator v1.0
 
-Approximate 88% planning milestone, based on the existing 75% checkpoint. This is a progress version, not the final v1.0 release.
+Systems Programming Task 3, continuing the existing v0.25 project. The implementation and local validation are complete. Publishing branches/tag, creating the GitHub Release and submitting to Moodle are separate actions described in FINISH_IN_VSCODE.md.
 
-## Progress
+## Releases and progress
 
-- v0.1: initial calculator (original tag preserved).
-- v0.2: file-processing/benchmark groundwork (original tag preserved).
-- v0.25: container comparisons.
-- Stage 1: Strategy 1 and build files.
-- Stage 2: Strategy 2, repeated comparisons and CSV.
-- Stage 3: isolated benchmark commands, real Linux memory measurements, reproducible full-size datasets and the complete six-way baseline survey through 10M students.
+| Version / stage | Changes |
+|---|---|
+| v0.1 | Initial student-grade calculator; the original tag/history is preserved. |
+| v0.2 | Student class, file processing and benchmark groundwork; original tag preserved. |
+| v0.25 | Vector/list/deque sorting, timings and output comparison. |
+| Task 3 stage 1 | Real Strategy 1 grouping, Make/CMake and instructions. |
+| Task 3 stage 2 | Strategy 2, strategy menu, repeated runs and CSV export. |
+| Task 3 stage 3 | Isolated benchmark CLI, Linux memory readings and the five-size baseline survey. |
+| v1.0 | Full-size comparisons, measured memory, standard-algorithm refactor, repeatable before/after measurements, regression checks and release documentation. |
 
-Final algorithm optimization, before/after comparisons and release/submission remain for the next stage. STAGE2_RESULTS.md remains historical; this stage uses the unified CSV format described below.
+The old v0.25 tables used classification counts without creating actual groups and must not be compared directly with v1.0 split timings. STAGE2_RESULTS.md and STAGE3_RESULTS.md are retained as historical progress evidence. Final measurements are below.
 
-## Build and run
+## Build and run — start here
 
-Unix: `make`, then `./student_grade_calculator`.
+C++17 compiler required. No external C++ libraries. Generated executables, build folders and large datasets are ignored by Git.
 
-Windows / VS Code, from the existing task3-repository folder:
+### Unix / Make
+
+```sh
+make
+./student_grade_calculator
+make test                 # optional: requires Python 3
+make clean
+```
+
+### Windows / VS Code with your existing g++
+
+Open the existing task3-repository folder in VS Code. In its PowerShell terminal:
 
 ```powershell
 g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Student.cpp -o student_grade_calculator.exe
 .\student_grade_calculator.exe
 ```
 
-CMake alternative:
+### CMake (Windows, Linux or macOS)
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
 ```
 
-Executable: build/student_grade_calculator on Unix; build/student_grade_calculator.exe for MinGW or build/Release/student_grade_calculator.exe for Visual Studio generators. Requires CMake and a configured C++17 compiler.
+On Unix: `./build/student_grade_calculator`. On Windows with MinGW: `.\build\student_grade_calculator.exe`; with a Visual Studio generator: `.\build\Release\student_grade_calculator.exe`. CMake and a configured C++ compiler must be installed. CTest registers the integration checks when Python 3 is found. The teacher's cmaketest.zip was an example of CMake/file I/O; its unrelated sample source is not required by this project. The teacher's MSI is a CMake installer, not project source.
 
-## Menu
+Verified here: GCC 14.2.0 Make build and CMake 4.4.4 Release build/CTest on Linux. Windows instructions use the same portable C++ sources, but were not executed in this environment.
 
-1. Process an input file with vector.
-2. Generate 1K, 10K, 100K, 1M and 10M student files (substantial disk space).
+## Menu and input
+
+1. Process a file with vector.
+2. Generate all five sizes (1K, 10K, 100K, 1M, 10M). This writes substantial data; generation is outside benchmark timing.
 3. Compare vector, list and deque.
 
-Processing asks for filename, sort by name/surname, average/median and strategy 1/2/both. Comparison also asks for 1–20 repetitions. This stage runs original loops only; algorithm selection is intentionally reserved for the final stage.
+For processing/comparison, enter the filename, name/surname sort, average/median grade calculation, strategy 1/2/both, repetitions for comparison mode, and original loops/standard algorithms. Filenames may contain spaces. A supplied small sample is students.txt.
 
-Strategy 1 retains the source and creates two same-type groups. Strategy 2 copies failures to a new container, compacts passed records in the source and erases the unused tail once. Erase updates the container size; it need not shrink vector/deque capacity.
-
-Example input (one record per line):
+One input record per line:
 
 ```text
+Name Surname homeworkCount homeworkGrade1 ... homeworkGradeN examGrade
 Youssef ElQouqi 5 5 8 9 10 7 9
 ```
 
-Fields: name, surname, homework count, homework grades, exam. Names are single tokens; count 0–1000; grades 1–10. Final grade = 0.4 × homework average/median + 0.6 × exam. Grade >= 5 passes. Zero homework contributes zero. Blank lines are skipped; malformed/truncated/extra fields are rejected. A small students.txt is included.
+Names and surnames are single tokens. Homework count is 0–1000; each grade is 1–10. Blank lines are skipped. Missing/invalid/truncated/extra fields cause an error. Zero homework uses a homework result of zero.
 
-Outputs include passed_list_s2_baseline.txt and failed_list_s2_baseline.txt (corresponding names for other containers/strategies). Reports include final grades and are not input files. Repeated runs overwrite matching report files. The interactive CSV is benchmark_results.csv and is replaced each session; rename it if you want to retain it.
+Final grade = 0.4 × homework average (or median) + 0.6 × exam. A grade >= 5 passes. The threshold uses the unrounded grade; output is rounded to two decimals.
 
-## Isolated benchmarking and verification
+## Grouping strategies and algorithms
 
-Python 3 is optional for the calculator and required for these helper scripts. Windows commands:
+- Strategy 1 keeps the original container and copies each student into exactly one of two new same-type containers (passed or failed). The assignment's phrasing does not mean each student belongs to both groups.
+- Strategy 2 stores failed students separately and keeps only passed students in the original. Erase/splice reduces its logical size. Vector/deque reserved storage need not shrink with the logical size.
+- Original-loop mode is retained for a fair baseline. Strategy 2 compacts passed students and erases the tail once, avoiding repeated middle deletion.
+- Standard-algorithm Strategy 1 uses `std::copy_if` and `std::remove_copy_if`.
+- Standard-algorithm Strategy 2 for vector/deque uses `std::remove_if` followed by erase, collecting failures before compaction overwrites their positions.
+- The selected list/Strategy 2 implementation uses `std::find_if` to find failed nodes and `list::splice` to transfer those nodes to the failed list without copying Student objects or allocating replacement nodes. Each search resumes at the next unvisited node, so total searching remains linear. Both groups retain sorted order.
+- Vector/deque use `std::sort`; list uses `list::sort`, since list iterators are not random-access iterators. Unrelated algorithms from the assignment's examples (such as search) are not inserted artificially.
 
-```powershell
-python scripts/check.py .\student_grade_calculator.exe
-python scripts/benchmark.py --exe .\student_grade_calculator.exe --output results/my-baseline.csv --sizes 1000 10000 --repetitions 3
+## Output and timing details
+
+Group filenames include container, strategy and implementation, for example `passed_list_s2_algorithms.txt` and `failed_list_s2_algorithms.txt`. The header describes fields; records include the original data plus final grade. Group outputs are reports, not input files. Repeats replace matching group outputs.
+
+Interactive runs replace benchmark_results.csv, with counts and timings for every case. Preserve/rename it before the next session if needed. Sorting, grouping, reading and writing are timed separately. Total is their sum, excluding menus, memory queries, result-CSV writing and container teardown. Output files are closed and stream errors checked; timings do not force a physical disk sync.
+
+Linux reports RSS after splitting and peak process RSS in KiB. Other platforms write -1 (unavailable). Interactive peak values accumulate across runs; use the isolated CLI/runner for comparisons. No universal memory or performance claims are made from one machine.
+
+## Reproduce final benchmarks
+
+Python 3 is required only for these helper scripts and tests. Commands below assume the Make-built executable; use its .exe path on Windows.
+
+```sh
+python3 scripts/check.py ./student_grade_calculator
+python3 scripts/benchmark.py --exe ./student_grade_calculator --output results/baseline.csv --repetitions 1
+python3 scripts/compare_optimized.py ./student_grade_calculator results/optimization.csv
+python3 scripts/summarize.py
 ```
 
-Omit --sizes to measure all five required sizes; use --repetitions 1 to reproduce the survey. The runner creates temporary datasets and deletes them after use. Run from a location with sufficient space. It rotates case order across repetitions and launches a new process for each measurement.
+The first benchmark runs 30 fresh processes (five sizes × three containers × two strategies). The paired comparison runs 30 fresh processes (five sizes × two implementations × three repetitions), alternating before/after order. Generation uses a fixed arithmetic grade pattern, identical across platforms, with 40% passing. The paired comparison should run after the baseline survey finishes. Both scripts delete temporary inputs/group outputs when done and preserve the raw CSVs. This synthetic dataset is a controlled benchmark, not a representation of all possible student data.
 
-Single-case commands:
+Individual CLI examples:
 
-```powershell
-.\student_grade_calculator.exe --generate 1000 students1000.txt
-.\student_grade_calculator.exe --run students1000.txt list 2 1 1 baseline 1 one.csv
+```sh
+./student_grade_calculator --generate 1000 students1000.txt
+./student_grade_calculator --run students1000.txt list 2 1 1 algorithms 1 single.csv
 ```
 
---run arguments: input, container, strategy, sort, grade, baseline, run number, CSV. Run where its output filenames can safely be replaced.
+The --run arguments are input, container, strategy, sort (1=name/2=surname), grade (1=average/2=median), implementation, run number and result CSV. Run in a directory where its output files can safely be replaced.
 
-Read/sort/split/write timings are separate; total is their sum. Menu time, CSV logging, memory probes, input generation and container destruction are excluded. Files are closed and write errors checked, but physical disk synchronization is not forced.
+## Validation
 
-Linux RSS comes from /proc/self/status and peak RSS from getrusage, in KiB. On Windows/unsupported systems these columns contain -1, meaning unavailable. Interactive peak RSS is cumulative; use fresh-process measurements for comparisons. These Linux readings do not describe your Windows computer.
+192 end-to-end valid cases compare group contents against independently calculated results: empty/all-pass/all-fail/mixed, grade-5 boundary, zero homework, odd/even median, both sort keys, both grade modes, all containers, both strategies and both implementations. Invalid/truncated/out-of-range records, missing files and end-of-input are also checked. Large benchmark runs verify student totals and the expected passing proportion for paired runs. Make and CMake/CTest passed.
 
-The tests cover 96 valid combinations: empty/all-pass/all-fail/mixed records, grade-5 boundary, zero homework, average/median, both sorting choices, both strategies and all containers. Invalid/missing inputs and EOF are also checked.
+## Final measurements
 
-## Recorded results
+Recorded on 9 November 2026 during the earlier final-stage investigation. Reused for this release because the measured C++ implementation is unchanged. Current release compilation and correctness checks were rerun; the large benchmark timings below were not rerun or relabeled as new measurements.
 
-### Stage 3 baseline measurements
+Linux x86_64 virtual environment; AMD EPYC 9V45 reported by /proc/cpuinfo; GCC 14.2.0; C++17; -O2. Name sorting, homework average, five homework grades. Deterministic input generated by --generate; 40% pass and 60% fail. These observations are not universal speed rankings.
 
-Recorded on 9 November 2026 during the previous final-stage investigation and reused here because this checkpoint uses that same baseline implementation. These are measured results, not estimates, and were not rerun for this packaging step.
+## Six-way baseline survey
 
-Linux x86_64, GCC 14.2.0, C++17, -O2; see results/baseline.json. Deterministic five-homework records; sort by name; use average. One fresh process per case; caches not cleared. The single-run survey identifies a candidate to investigate, not a universal winner.
+One isolated process per case. Times include reading, sorting, splitting and output-file writing. Memory probes, CSV logging, destruction and UI are outside the timed total. Caches were not cleared; this is an exploratory single-run survey, so small differences are inconclusive.
 
-| Students | Container | Strategy | Read ms | Sort ms | Split ms | Write ms | Total ms | RSS after split MiB |
-|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| 1000 | vector | 1 | 0.408 | 0.438 | 0.094 | 0.347 | 1.287 | 2.20 |
-| 1000 | vector | 2 | 0.405 | 0.401 | 0.066 | 0.331 | 1.203 | 2.14 |
-| 1000 | list | 1 | 0.422 | 0.129 | 0.050 | 0.265 | 0.866 | 2.12 |
-| 1000 | list | 2 | 0.354 | 0.129 | 0.043 | 0.253 | 0.779 | 2.05 |
-| 1000 | deque | 1 | 0.302 | 0.525 | 0.048 | 0.256 | 1.130 | 2.09 |
-| 1000 | deque | 2 | 0.317 | 0.390 | 0.039 | 0.513 | 1.259 | 2.04 |
-| 10000 | vector | 1 | 4.128 | 6.163 | 0.897 | 2.351 | 13.540 | 5.28 |
-| 10000 | vector | 2 | 4.163 | 5.877 | 0.916 | 3.356 | 14.312 | 4.63 |
-| 10000 | list | 1 | 10.756 | 2.723 | 1.623 | 5.978 | 21.080 | 4.87 |
-| 10000 | list | 2 | 3.132 | 2.071 | 0.463 | 2.489 | 8.155 | 4.25 |
-| 10000 | deque | 1 | 3.140 | 6.841 | 0.536 | 2.762 | 13.278 | 4.54 |
-| 10000 | deque | 2 | 2.967 | 6.596 | 0.400 | 2.627 | 12.591 | 3.99 |
-| 100000 | vector | 1 | 35.033 | 79.044 | 10.743 | 25.459 | 150.280 | 34.59 |
-| 100000 | vector | 2 | 35.491 | 78.065 | 6.216 | 25.077 | 144.849 | 27.39 |
-| 100000 | list | 1 | 32.408 | 23.189 | 8.251 | 30.250 | 94.098 | 32.33 |
-| 100000 | list | 2 | 31.461 | 22.724 | 4.743 | 24.010 | 82.939 | 26.22 |
-| 100000 | deque | 1 | 33.111 | 92.860 | 4.752 | 29.587 | 160.310 | 28.93 |
-| 100000 | deque | 2 | 30.540 | 81.599 | 4.293 | 25.317 | 141.748 | 23.50 |
-| 1000000 | vector | 1 | 368.914 | 1131.734 | 159.268 | 240.219 | 1900.135 | 273.38 |
-| 1000000 | vector | 2 | 335.729 | 1089.213 | 80.443 | 232.284 | 1737.669 | 243.71 |
-| 1000000 | list | 1 | 298.801 | 255.211 | 66.784 | 260.252 | 881.048 | 306.99 |
-| 1000000 | list | 2 | 342.908 | 267.733 | 53.783 | 256.027 | 920.451 | 245.95 |
-| 1000000 | deque | 1 | 294.750 | 1033.606 | 58.708 | 325.958 | 1713.022 | 272.69 |
-| 1000000 | deque | 2 | 306.171 | 1109.358 | 50.206 | 252.714 | 1718.448 | 218.52 |
-| 10000000 | vector | 1 | 11564.660 | 13653.767 | 2196.356 | 2684.767 | 30099.550 | 2631.98 |
-| 10000000 | vector | 2 | 3832.982 | 13304.537 | 811.536 | 2463.554 | 20412.609 | 2149.92 |
-| 10000000 | list | 1 | 3052.914 | 3147.348 | 771.396 | 2564.739 | 9536.397 | 3053.57 |
-| 10000000 | list | 2 | 3134.905 | 3092.422 | 554.860 | 2352.544 | 9134.731 | 2443.21 |
-| 10000000 | deque | 1 | 3017.461 | 13896.854 | 522.515 | 2972.296 | 20409.127 | 2710.29 |
-| 10000000 | deque | 2 | 3013.849 | 13793.138 | 532.129 | 3084.985 | 20424.102 | 2168.59 |
+| N | Container | Strategy | Read ms | Sort ms | Split ms | Write ms | Total ms | RSS after split MiB | Peak RSS MiB |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1000 | vector | 1 | 0.408 | 0.438 | 0.094 | 0.347 | 1.287 | 2.20 | 10.62 |
+| 1000 | vector | 2 | 0.405 | 0.401 | 0.066 | 0.331 | 1.203 | 2.14 | 10.62 |
+| 1000 | list | 1 | 0.422 | 0.129 | 0.050 | 0.265 | 0.866 | 2.12 | 10.62 |
+| 1000 | list | 2 | 0.354 | 0.129 | 0.043 | 0.253 | 0.779 | 2.05 | 10.62 |
+| 1000 | deque | 1 | 0.302 | 0.525 | 0.048 | 0.256 | 1.130 | 2.09 | 10.62 |
+| 1000 | deque | 2 | 0.317 | 0.390 | 0.039 | 0.513 | 1.259 | 2.04 | 10.62 |
+| 10000 | vector | 1 | 4.128 | 6.163 | 0.897 | 2.351 | 13.540 | 5.28 | 10.62 |
+| 10000 | vector | 2 | 4.163 | 5.877 | 0.916 | 3.356 | 14.312 | 4.63 | 10.62 |
+| 10000 | list | 1 | 10.756 | 2.723 | 1.623 | 5.978 | 21.080 | 4.87 | 10.62 |
+| 10000 | list | 2 | 3.132 | 2.071 | 0.463 | 2.489 | 8.155 | 4.25 | 10.62 |
+| 10000 | deque | 1 | 3.140 | 6.841 | 0.536 | 2.762 | 13.278 | 4.54 | 10.62 |
+| 10000 | deque | 2 | 2.967 | 6.596 | 0.400 | 2.627 | 12.591 | 3.99 | 10.62 |
+| 100000 | vector | 1 | 35.033 | 79.044 | 10.743 | 25.459 | 150.280 | 34.59 | 34.61 |
+| 100000 | vector | 2 | 35.491 | 78.065 | 6.216 | 25.077 | 144.849 | 27.39 | 27.34 |
+| 100000 | list | 1 | 32.408 | 23.189 | 8.251 | 30.250 | 94.098 | 32.33 | 32.26 |
+| 100000 | list | 2 | 31.461 | 22.724 | 4.743 | 24.010 | 82.939 | 26.22 | 26.14 |
+| 100000 | deque | 1 | 33.111 | 92.860 | 4.752 | 29.587 | 160.310 | 28.93 | 28.89 |
+| 100000 | deque | 2 | 30.540 | 81.599 | 4.293 | 25.317 | 141.748 | 23.50 | 23.51 |
+| 1000000 | vector | 1 | 368.914 | 1131.734 | 159.268 | 240.219 | 1900.135 | 273.38 | 312.68 |
+| 1000000 | vector | 2 | 335.729 | 1089.213 | 80.443 | 232.284 | 1737.669 | 243.71 | 288.10 |
+| 1000000 | list | 1 | 298.801 | 255.211 | 66.784 | 260.252 | 881.048 | 306.99 | 307.01 |
+| 1000000 | list | 2 | 342.908 | 267.733 | 53.783 | 256.027 | 920.451 | 245.95 | 245.89 |
+| 1000000 | deque | 1 | 294.750 | 1033.606 | 58.708 | 325.958 | 1713.022 | 272.69 | 272.69 |
+| 1000000 | deque | 2 | 306.171 | 1109.358 | 50.206 | 252.714 | 1718.448 | 218.52 | 218.45 |
+| 10000000 | vector | 1 | 11564.660 | 13653.767 | 2196.356 | 2684.767 | 30099.550 | 2631.98 | 2749.36 |
+| 10000000 | vector | 2 | 3832.982 | 13304.537 | 811.536 | 2463.554 | 20412.609 | 2149.92 | 2386.69 |
+| 10000000 | list | 1 | 3052.914 | 3147.348 | 771.396 | 2564.739 | 9536.397 | 3053.57 | 3053.51 |
+| 10000000 | list | 2 | 3134.905 | 3092.422 | 554.860 | 2352.544 | 9134.731 | 2443.21 | 2443.14 |
+| 10000000 | deque | 1 | 3017.461 | 13896.854 | 522.515 | 2972.296 | 20409.127 | 2710.29 | 2710.27 |
+| 10000000 | deque | 2 | 3013.849 | 13793.138 | 532.129 | 3084.985 | 20424.102 | 2168.59 | 2168.52 |
 
-At 10M records, list/strategy 2 had the lowest surveyed total (9.135 seconds). It is the candidate for the next stage, when standard algorithms and repeated before/after measurements will be added.
+At 10M records the lowest surveyed total was list strategy 2 (9.135 seconds). List/strategy 2 was selected for the focused refactor; it also retains fewer live records than strategy 1.
 
-RSS after splitting is resident process memory, not a sum of Student object sizes. Strategy 1 retains 2N live records; Strategy 2 retains N. Vector/deque capacity, list nodes, allocator retention and dynamic strings/homework affect allocated bytes. Erase reduces logical size without guaranteeing capacity release.
+## Paired before/after: list, strategy 2
 
-For 10M records, strategy 1 / strategy 2 resident memory was approximately vector 2632 / 2150 MiB, list 3054 / 2443 MiB, deque 2710 / 2169 MiB. This supports a memory benefit, not an exact twofold saving. Linux process peak RSS is also in the raw CSV; interactive runs accumulate peaks, so the isolated CLI was used. The OS counters may differ slightly due to sampling/accounting.
+Three fresh processes per implementation per size. Implementation order alternates per repetition. Medians are shown. Baseline uses the previous manual compaction loop. Algorithms uses std::find_if and list::splice, transferring failed nodes without allocating/copying their Student data. Input generation is excluded.
 
-Still pending: standard-algorithm refactor, repeated before/after results, final v1.0 branch/tag/release and Moodle submission.
+| N | Baseline split ms | Algorithms split ms | Baseline total ms | Algorithms total ms | Split improvement % | Total improvement % |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1000 | 0.044 | 0.004 | 0.949 | 0.822 | 90.58 | 13.33 |
+| 10000 | 0.595 | 0.041 | 9.377 | 7.881 | 93.14 | 15.95 |
+| 100000 | 4.949 | 0.459 | 87.869 | 94.107 | 90.72 | -7.10 |
+| 1000000 | 51.521 | 6.047 | 894.886 | 870.350 | 88.26 | 2.74 |
+| 10000000 | 507.909 | 54.115 | 9428.596 | 8791.867 | 89.35 | 6.75 |
+
+Negative improvement means a slowdown. Sorting and I/O often dominate total time; reduced grouping time does not guarantee a faster total on every run. Repeated runs reduce but do not eliminate shared-environment noise.
+
+## Memory interpretation
+
+RSS after splitting comes from /proc/self/status (VmRSS); process peak RSS comes from getrusage. Linux measurements are in KiB; table values divide by 1024. Unsupported platforms report -1, not a fabricated zero. Peak RSS spans the entire process, including allocator behavior and inherited process overhead. The two OS counters may differ slightly due to accounting/sampling. Use the fresh-process CLI for comparable peak measurements; interactive repeated runs have cumulative process peaks.
+
+Strategy 1 holds the original N records plus N copies in the two groups (2N total). Strategy 2 holds N live records across its original and failed groups. Logical counts are not bytes: vector capacity, deque blocks, list nodes, allocator retention and strings/homework allocations matter. The baseline does not call shrink_to_fit, so erasing reduces logical size without guaranteeing capacity release.
+
+| Container (10M) | Strategy 1 RSS MiB | Strategy 2 RSS MiB | Reduction % |
+|---|---:|---:|---:|
+| vector | 2631.98 | 2149.92 | 18.32 |
+| list | 3053.57 | 2443.21 | 19.99 |
+| deque | 2710.29 | 2168.59 | 19.99 |
+
+The measured largest cases support the claim that Strategy 2 saves resident memory. They do not establish an exact twofold saving. The optimized list implementation additionally avoids transient duplicate failed nodes. Raw timings, counts and memory readings are preserved in results/*.csv.
