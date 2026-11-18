@@ -8,7 +8,7 @@ with tempfile.TemporaryDirectory() as d:
  for records in cases:
   text='\n'.join(f'{name} {surname} {len(hw)} '+ ' '.join(map(str,hw+[exam])) for name,surname,hw,exam in records)
   (p/'input.txt').write_text(text)
-  for container,strategy,sort,grade,impl in itertools.product(['vector','list','deque'],[1,2],[1,2],[1,2],['baseline']):
+  for container,strategy,sort,grade,impl in itertools.product(['vector','list','deque'],[1,2],[1,2],[1,2],['baseline','algorithms']):
    r=subprocess.run([exe,'--run','input.txt',container,str(strategy),str(sort),str(grade),impl,'1','out.csv'],cwd=p,capture_output=True,text=True)
    assert r.returncode==0,r.stderr
    row=next(csv.DictReader((p/'out.csv').open()))
@@ -29,4 +29,4 @@ with tempfile.TemporaryDirectory() as d:
  for args in [['--generate','0','a.txt'],['--run','missing.txt','vector','1','1','1','baseline','1','out.csv']]:
   assert subprocess.run([exe]+args,cwd=p,capture_output=True).returncode==1
  assert subprocess.run([exe],input='',text=True,cwd=p,capture_output=True).returncode==1
-print('PASS: 96 valid end-to-end cases, grade boundary, both sort/grade modes, both strategies, malformed/missing input and EOF.')
+print('PASS: 192 valid end-to-end cases, grade boundary, both sort/grade modes, both strategies/implementations, malformed/missing input and EOF.')

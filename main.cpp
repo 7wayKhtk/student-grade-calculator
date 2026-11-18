@@ -122,7 +122,38 @@ void sortStudents(Container& students, int choice) {
 template <typename Container>
 void splitStudents(Container& students, Container& passed, Container& failed,
                    int strategy, bool median, const string& implementation) {
-    if (implementation != "baseline") throw runtime_error("Unknown implementation");
+    if (implementation == "algorithms") {
+        auto isPassed = [median](const Student& student) {
+            return student.calculateFinalGrade(median) >= 5.0;
+        };
+        if (strategy == 1) {
+            copy_if(students.begin(), students.end(), back_inserter(passed), isPassed);
+            remove_copy_if(students.begin(), students.end(), back_inserter(failed), isPassed);
+        } else if constexpr (is_same_v<Container, list<Student>>) {
+            // find_if visits each node once across the loop. splice transfers
+            // failed nodes without copying Student data or allocating new nodes.
+            auto current = students.begin();
+            while (true) {
+                current = find_if(current, students.end(),
+                    [&isPassed](const Student& student) { return !isPassed(student); });
+                if (current == students.end()) break;
+                auto failedNode = current++;
+                failed.splice(failed.end(), students, failedNode);
+            }
+        } else {
+            // remove_if preserves the order of retained students. Capture failed
+            // records before their positions can be overwritten by compaction.
+            auto newEnd = remove_if(students.begin(), students.end(),
+                [&failed, &isPassed](const Student& student) {
+                    if (isPassed(student)) return false;
+                    failed.push_back(student);
+                    return true;
+                });
+            students.erase(newEnd, students.end());
+        }
+        return;
+    }
+    if (implementation != "baseline") throw runtime_error("Implementation must be baseline or algorithms");
     if (strategy == 1) {
         for (const Student& student : students) {
             if (student.calculateFinalGrade(median) >= 5.0) passed.push_back(student);
@@ -211,8 +242,8 @@ int main(int argc, char** argv) {
             if (!results) throw runtime_error("Cannot finish result CSV");
             return 0;
         }
-        if (argc != 1) throw runtime_error("Usage: --generate COUNT FILE or --run FILE CONTAINER STRATEGY SORT GRADE baseline RUN CSV");
-        cout << "Student Grade Calculator - Task 3 stage 3\n1 - Process a file\n2 - Generate benchmark files\n3 - Compare containers and strategies\n";
+        if (argc != 1) throw runtime_error("Usage: --generate COUNT FILE or --run FILE CONTAINER STRATEGY SORT GRADE baseline|algorithms RUN CSV");
+        cout << "Student Grade Calculator v1.0\n1 - Process a file\n2 - Generate benchmark files\n3 - Compare containers and strategies\n";
         const int action = readInt("Choice: ", 1, 3);
         if (action == 2) {
             for (size_t n : {1000, 10000, 100000, 1000000, 10000000}) {
@@ -226,7 +257,7 @@ int main(int argc, char** argv) {
         const bool median = readInt("Grade: 1 - Average, 2 - Median: ", 1, 2) == 2;
         const int strategy = readInt("Strategy: 1 - Two new groups, 2 - Failed only, 3 - Both: ", 1, 3);
         const int reps = action == 3 ? readInt("Repetitions (1-20): ", 1, 20) : 1;
-        const string implementation = "baseline";
+        const string implementation = readInt("Implementation: 1 - Original loops, 2 - Standard algorithms: ", 1, 2) == 1 ? "baseline" : "algorithms";
         ofstream results("benchmark_results.csv");
         if (!results) throw runtime_error("Cannot create benchmark_results.csv");
         results << csvHeader;
